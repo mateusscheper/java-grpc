@@ -1,0 +1,52 @@
+package scheper.mateus.exception;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.List;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import java.util.stream.Collectors;
+
+@RestControllerAdvice
+public class ApplicationControllerAdvice {
+
+    protected final Log logger = LogFactory.getLog(this.getClass());
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrors handleValidationErros(MethodArgumentNotValidException ex) {
+        BindingResult bindingResult = ex.getBindingResult();
+        List<String> messages = bindingResult.getAllErrors()
+                .stream()
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .collect(Collectors.toList());
+        return new ApiErrors(messages);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrors handleException(BusinessException e) {
+        String message = e.getMessage();
+
+        if (message.startsWith("{") && message.endsWith("}")) {
+            String messageNoBraces = message.replace("{", "").replace("}", "");
+            try {
+                message = ResourceBundle.getBundle("messages").getString(messageNoBraces);
+            } catch (MissingResourceException ignored) {
+                // ignored
+            }
+        }
+
+        logger.info(message);
+
+        return new ApiErrors(message);
+    }
+}
