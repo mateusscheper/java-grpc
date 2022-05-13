@@ -1,10 +1,13 @@
 package scheper.mateus.service;
 
+import io.github.majusko.grpc.jwt.service.JwtService;
+import io.github.majusko.grpc.jwt.service.dto.JwtData;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import scheper.mateus.entity.Usuario;
 import scheper.mateus.exception.BusinessException;
-import scheper.mateus.grpc.LoginRequest;
+import grpc.LoginRequest;
 import scheper.mateus.repository.UsuarioRepository;
 
 import static scheper.mateus.utils.ConstantUtils.EMAIL_SENHA_INVALIDOS;
@@ -12,10 +15,9 @@ import static scheper.mateus.utils.ConstantUtils.EMAIL_SENHA_INVALIDOS;
 @Service
 public class LoginService {
 
-
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+    private final io.github.majusko.grpc.jwt.service.JwtService jwtService;
 
     public LoginService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.usuarioRepository = usuarioRepository;
@@ -23,6 +25,7 @@ public class LoginService {
         this.jwtService = jwtService;
     }
 
+    @Transactional
     public String login(LoginRequest request) {
         Usuario usuario = usuarioRepository.findByEmail(request.getEmail());
         if (usuario == null) {
@@ -30,7 +33,8 @@ public class LoginService {
         }
 
         if (passwordEncoder.matches(request.getSenha(), usuario.getSenha())) {
-            return jwtService.gerarTokenLogin(usuario);
+            JwtData jwtData = new JwtData(usuario.getIdUsuario().toString(), usuario.getRolesAsHashSet());
+            return jwtService.generate(jwtData);
         } else
             throw new BusinessException(EMAIL_SENHA_INVALIDOS);
     }

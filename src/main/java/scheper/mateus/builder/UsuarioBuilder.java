@@ -1,7 +1,7 @@
 package scheper.mateus.builder;
 
 import scheper.mateus.entity.Usuario;
-import scheper.mateus.grpc.NovoUsuarioRequest;
+import grpc.NovoUsuarioRequest;
 
 public final class UsuarioBuilder {
     private Usuario usuario;

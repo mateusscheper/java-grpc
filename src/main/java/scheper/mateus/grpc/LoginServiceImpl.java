@@ -1,13 +1,16 @@
 package scheper.mateus.grpc;
 
+import grpc.LoginRequest;
+import grpc.LoginResponse;
+import grpc.LoginServiceGrpc;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import net.devh.boot.grpc.server.service.GrpcService;
+import org.lognet.springboot.grpc.GRpcService;
 import scheper.mateus.exception.BusinessException;
 import scheper.mateus.service.LoginService;
 
-@GrpcService
+@GRpcService
 public class LoginServiceImpl extends LoginServiceGrpc.LoginServiceImplBase {
 
     private final LoginService loginService;

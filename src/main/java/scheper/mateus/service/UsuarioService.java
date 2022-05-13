@@ -7,8 +7,8 @@ import scheper.mateus.builder.UsuarioBuilder;
 import scheper.mateus.entity.Role;
 import scheper.mateus.entity.Usuario;
 import scheper.mateus.exception.BusinessException;
-import scheper.mateus.grpc.ListaUsuarioResponse;
-import scheper.mateus.grpc.NovoUsuarioRequest;
+import grpc.ListaUsuarioResponse;
+import grpc.NovoUsuarioRequest;
 import scheper.mateus.repository.RoleRepository;
 import scheper.mateus.repository.UsuarioRepository;
 
@@ -53,7 +53,7 @@ public class UsuarioService {
         return roleOptional.get();
     }
 
-    public ListaUsuarioResponse listarUsuarios(scheper.mateus.grpc.Usuario filtro) {
+    public ListaUsuarioResponse listarUsuarios(grpc.Usuario filtro) {
         return usuarioRepository.listarUsuarios(filtro);
     }
 }

@@ -26,7 +26,7 @@ import static scheper.mateus.utils.ConstantUtils.USUARIO_NAO_ENCONTRADO;
 
 
 @Service
-public class JwtService {
+public class JwtCustomService {
 
     @Value(value = "${jwt.security.expiracao}")
     private String expiracao;
@@ -38,7 +38,7 @@ public class JwtService {
 
     List<String> tokenBlocklist = new ArrayList<>();
 
-    public JwtService(UsuarioRepository usuarioRepository) {
+    public JwtCustomService(UsuarioRepository usuarioRepository) {
         this.usuarioRepository = usuarioRepository;
     }
 

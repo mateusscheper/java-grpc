@@ -7,7 +7,7 @@ import jakarta.persistence.Query;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Repository;
 import scheper.mateus.entity.Usuario;
-import scheper.mateus.grpc.ListaUsuarioResponse;
+import grpc.ListaUsuarioResponse;
 
 import java.util.List;
 
@@ -37,7 +37,7 @@ public class UsuarioRepositoryImpl implements UsuarioRepository {
     }
 
     @Override
-    public ListaUsuarioResponse listarUsuarios(scheper.mateus.grpc.Usuario filtro) {
+    public ListaUsuarioResponse listarUsuarios(grpc.Usuario filtro) {
         try {
             String sql = gerarSqlListarUsuarios(filtro);
             Query query = entityManager.createNativeQuery(sql);
@@ -60,7 +60,7 @@ public class UsuarioRepositoryImpl implements UsuarioRepository {
             String cpf = (String) dadosUsuario[2];
             String email = (String) dadosUsuario[3];
 
-            var usuario = scheper.mateus.grpc.Usuario.newBuilder()
+            var usuario = grpc.Usuario.newBuilder()
                     .setId(idUsuario)
                     .setNome(nome)
                     .setCpf(cpf)
@@ -71,7 +71,7 @@ public class UsuarioRepositoryImpl implements UsuarioRepository {
         }
     }
 
-    private void popularParametrosListarUsuarios(scheper.mateus.grpc.Usuario filtro, Query query) {
+    private void popularParametrosListarUsuarios(grpc.Usuario filtro, Query query) {
         if (!StringUtils.isBlank(filtro.getId())) {
             query.setParameter("idUsuario", filtro.getId());
         }
@@ -90,7 +90,7 @@ public class UsuarioRepositoryImpl implements UsuarioRepository {
         }
     }
 
-    private String gerarSqlListarUsuarios(scheper.mateus.grpc.Usuario filtro) {
+    private String gerarSqlListarUsuarios(grpc.Usuario filtro) {
         StringBuilder sql = new StringBuilder();
         String andOrWhere = "WHERE ";
         sql.append("SELECT CAST(u.id_usuario AS varchar), u.nome, u.cpf, u.email FROM public.usuario u ");

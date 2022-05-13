@@ -1,13 +1,20 @@
 package scheper.mateus.grpc;
 
+import grpc.ListaUsuarioResponse;
+import grpc.NovoUsuarioRequest;
+import grpc.NovoUsuarioResponse;
+import grpc.Usuario;
+import grpc.UsuarioServiceGrpc;
+import io.github.majusko.grpc.jwt.annotation.Allow;
+import io.github.majusko.grpc.jwt.annotation.Exposed;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import net.devh.boot.grpc.server.service.GrpcService;
+import org.lognet.springboot.grpc.GRpcService;
 import org.springframework.security.access.annotation.Secured;
 import scheper.mateus.service.UsuarioService;
 
-@GrpcService
+@GRpcService
 public class UsuarioServiceImpl extends UsuarioServiceGrpc.UsuarioServiceImplBase {
 
     private final UsuarioService usuarioService;
@@ -16,8 +23,10 @@ public class UsuarioServiceImpl extends UsuarioServiceGrpc.UsuarioServiceImplBas
         this.usuarioService = usuarioService;
     }
 
+
     @Override
-    @Secured("ROLE_ADMIN")
+    @Secured({})
+    @Exposed(environments={"default","qa"})
     public void criarUsuario(NovoUsuarioRequest request, StreamObserver<NovoUsuarioResponse> responseObserver) {
         try {
             usuarioService.criarUsuario(request);

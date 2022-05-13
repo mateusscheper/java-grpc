@@ -8,7 +8,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 public class Usuario {
@@ -85,5 +88,12 @@ public class Usuario {
                 .stream()
                 .map(Role::getNome)
                 .toArray(String[]::new);
+    }
+
+    public HashSet<String> getRolesAsHashSet() {
+        HashSet<String> rolesHashSet = new HashSet<>();
+        this.roles.forEach(r -> rolesHashSet.add(r.getNome()));
+
+        return rolesHashSet;
     }
 }
