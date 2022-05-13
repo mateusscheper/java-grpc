@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "scheper.mateus.grpc";
+
+package grpc;
+
+service LoginService {
+  rpc login (LoginRequest) returns (LoginResponse) {}
+}
+
+message LoginRequest {
+  string email = 1;
+  string senha = 2;
+}
+
+message LoginResponse {
+  string message = 1;
+}

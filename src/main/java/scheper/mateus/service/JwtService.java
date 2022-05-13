@@ -1,23 +1,19 @@
 package scheper.mateus.service;
 
-import api.dto.oauth2.LocalUser;
-import api.dto.oauth2.SocialProviderEnum;
-import api.entity.Role;
-import api.entity.Usuario;
-import api.exception.BusinessException;
-import api.repository.UsuarioRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
+import scheper.mateus.entity.Role;
 import scheper.mateus.entity.Usuario;
+import scheper.mateus.exception.BusinessException;
+import scheper.mateus.repository.UsuarioRepository;
 
-import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -26,7 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static api.utils.ConstantUtils.USUARIO_NAO_ENCONTRADO;
+import static scheper.mateus.utils.ConstantUtils.USUARIO_NAO_ENCONTRADO;
+
 
 @Service
 public class JwtService {
@@ -46,11 +43,11 @@ public class JwtService {
     }
 
     @Transactional
-    public String gerarTokenLoginLocal(Usuario usuario) {
-        return buildJwt(usuario, SocialProviderEnum.LOCAL.getProviderType());
+    public String gerarTokenLogin(Usuario usuario) {
+        return buildJwt(usuario);
     }
 
-    private String buildJwt(Usuario usuario, String issuer) {
+    private String buildJwt(Usuario usuario) {
         String subject = usuario.getEmail();
         Date expiration = obterDataExpiracao();
         String[] roles = mapRoles(usuario);
@@ -60,7 +57,6 @@ public class JwtService {
                 .setSubject(subject)
                 .setClaims(claims)
                 .setIssuedAt(new Date())
-                .setIssuer(issuer)
                 .setExpiration(expiration)
                 .signWith(SignatureAlgorithm.HS512, chaveAssinatura)
                 .compact();
@@ -69,7 +65,7 @@ public class JwtService {
     private Map<String, Object> obterClaimsDoUsuario(Usuario usuario, String[] roles) {
         Map<String, Object> claims = new HashMap<>();
         claims.put(Claims.SUBJECT, usuario.getEmail());
-        claims.put("uid", usuario.getId());
+        claims.put("uid", usuario.getIdUsuario());
         claims.put("nmame", usuario.getNome());
         claims.put("roles", roles);
         return claims;

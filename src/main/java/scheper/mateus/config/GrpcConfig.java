@@ -2,6 +2,7 @@ package scheper.mateus.config;
 
 import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
 import net.devh.boot.grpc.server.security.authentication.BasicGrpcAuthenticationReader;
+import net.devh.boot.grpc.server.security.authentication.BearerAuthenticationReader;
 import net.devh.boot.grpc.server.security.authentication.CompositeGrpcAuthenticationReader;
 import net.devh.boot.grpc.server.security.authentication.GrpcAuthenticationReader;
 import net.devh.boot.grpc.server.security.authentication.SSLContextGrpcAuthenticationReader;
@@ -23,6 +24,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import scheper.mateus.grpc.UsuarioServiceGrpc;
 import scheper.mateus.security.CustomUserDetailsService;
+import scheper.mateus.service.JwtService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,8 +68,10 @@ public class GrpcConfig {
 
     @Bean
     public GrpcAuthenticationReader grpcAuthenticationReader() {
-        return new BasicGrpcAuthenticationReader();
-    }
+        final List<GrpcAuthenticationReader> readers = new ArrayList<>();
+        // The actual token class is dependent on your spring-security library (OAuth2/JWT/...)
+        readers.add(new BearerAuthenticationReader(accessToken -> new JwtService(accessToken)));
+        return new CompositeGrpcAuthenticationReader(readers);    }
 /*
     @Bean
     AuthenticationManager authenticationManager() {
