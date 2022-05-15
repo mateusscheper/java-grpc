@@ -1,9 +1,35 @@
 
-# Java gRPC
+# Aplicação Spring com serviços gRPC e autenticação JWT
 
 O gRPC (Google Remote Procedure Call) é um framework de código aberto usado para conectar sistemas de maneira eficiente, seja através da internet ou em data centers. Seu uso se dá em aplicações web, mobile, dispositivos externos e onde mais precisar.
 Seu desenvolvimento acontece de maneira similar ao SOAP, tendo um arquivo modelo para os serviços, requisições e respostas, e toda a geração de código é feita através do Protocol Buffer, permitindo que o desenvolvedor foque apenas nas regras de negócio.
 Veremos abaixo comparações de desempenho entre o gRPC e outros modelos, como o REST e o SOAP. Spoiler: gRPC é muito mais rápido.
+
+
+## Sumário
+
+1. [Visão geral](./README.md#viso-geral)
+2. [Por que usar gRPC?](./README.md#por-que-usar-grpc)
+3. [Desenvolvimento entre sistemas (cliente-servidor)](./README.md#desenvolvimento-entre-sistemas-cliente-servidor)
+4. [Como funciona a interação entre sistemas?](./README.md#como-funciona-a-interao-entre-sistemas)
+5. [Protocol Buffers](./README.md#protocol-buffers)
+6. [Tipos de serviço](./README.md#tipos-de-servio)
+   - [Envio único, resposta única (unário)](./README.md#envio-nico-resposta-nica-unrio)
+   - [Envio único, sequência de respostas](./README.md#--sequncia-de-envios-sequncia-de-respostas)
+   - [Sequência de envios, única resposta](./README.md#--sequncia-de-envios-nica-resposta)
+   - [Sequência de envios, sequência de respostas](./README.md#--sequncia-de-envios-sequncia-de-respostas)
+7. [Tempo limite, cancelamento e finalização](./README.md#tempo-limite-cancelamento-e-finalizao)
+8. [Metadados](./README.md#metadados)
+9. [Canais](./README.md#canais)
+10. [Na prática](./README.md#na-prtica)
+    - [Depencências](./README.md#dependncias)
+    - [Banco de dados](./README.md#banco-de-dados)
+    - [Classes do projeto](./README.md#classes-do-projeto)
+    - [Arquivos *.proto](./README.md#arquivos-proto)
+    - [Geração das classes de gRPC](./README.md#gerao-das-classes-de-grpc)
+    - [Implementando a lógica de negócio nos serviços gRPC](./README.md#implementando-a-lgica-de-negcio-nos-servios-grpc)
+    - [Segurança com JWT](./README.md#segurana-com-jwt)
+    - [Criando um cliente para testes](./README.md#criando-um-cliente-para-testes)
 
 
 
@@ -139,7 +165,7 @@ Ao observarmos o pacote [scheper.mateus](src/main/java/scheper/mateus), vemos al
 - [service](src/main/java/scheper/mateus/service): contém a classe de serviço [UsuarioService](src/main/java/scheper/mateus/service/UsuarioService.java) responsável por realizar as regras de negócio do sistema, bem como invocar o repositório de usuário para realizar operações de banco. Também temos a classe [LoginService](src/main/java/scheper/mateus/service/LoginService.java), responsável por gerar o token JWT;
 - [utils](src/main/java/scheper/mateus/utils): contém a classe de utilizade [ConstantUtils](src/main/java/scheper/mateus/utils/ConstantUtils.java), responsável por manter constantes do sistema para serem utilizadas onde precisarmos.
 
-### Arquivo usuario.proto
+### Arquivos *.proto
 Observando o arquivo [usuario.proto](src/main/proto/usuario.proto), vemos:
 - Linha 1: informamos para o Protobuf que estamos utilizando a versão 3. Caso não informado, o padrão é a versão 2;
 - Linha 3: definimos que queremos criar múltiplos arquivos em vez de um só;
@@ -151,6 +177,8 @@ Observando o arquivo [usuario.proto](src/main/proto/usuario.proto), vemos:
 - Linhas 20~22: aqui especificamos o formato da mensagem de retorno após a criação do usuário ser bem sucedida. Poderíamos apenas retornar uma mensagem vazia também;
 - Linhas 24~29: mensagem contendo os campos que serão informados pelo cliente gRPC ao chamar o método listarUsuarios. Cada campo será utilizado para montar o SQL que buscará os usuários no banco de dados;
 - Linhas 31~33: definimos uma mensagem de nome ListaUsuarioResponse e informamos que retornaremos uma lista de usuários (observe a palavra "repeated" informando que um ou mais usuários serão retornados).
+
+As mesmas definições valem para o arquivo [login.proto](src/main/proto/login.proto) (mudando os serviço, claro).
 
 ### Geração das classes de gRPC
 Para gerar as classes utilizando o Maven, basta rodar o maven compile:
