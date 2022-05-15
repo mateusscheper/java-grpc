@@ -19,7 +19,7 @@ Tendo o modelo pronto, já é possível gerar os arquivos na linguagem que você
 - Preciso, eficiente e independente de linguagens de programação;
 - Permite autenticação, balanceamento de carga, logs, monitoramento e mais.
 
-### Desenvolvimento cliente-servidor entre sistemas
+### Desenvolvimento entre sistemas (cliente-servidor)
 
 Assumindo que o sistema será utilizado por outros sistemas, para que outro time desenvolva uma aplicação cliente, basta compartilhar o arquivo .proto e os mesmos poderão gerar todos os arquivos com base no mesmo, sem dor de cabeça.
 A geração de arquivos com base nos Protocol Buffers funciona em diversas linguagens, então é perfeitamente possível criar um servidor em Java por exemplo e ter uma aplicação PHP, Go, Python ou outra linguagem qualquer como cliente.
@@ -104,10 +104,12 @@ Um canal gRPC provê uma conexão com um servidor em um host e porta específico
 
 ### Dependências
 Para entendermos melhor, vamos observar o [pom.xml](./pom.xml) da aplicação:
-- Nas linhas 23~46, adicionamos as dependências necessárias para rodar o gRPC na aplicação;
-- Nas linhas 48~83, adicionamos as dependências do Spring;
-- Nas linhas 86~118, informamos ao Maven que queremos buildar o sistema, incluindo a geração das classes Java a partir do arquivo [usuario.proto](./src/main/proto/usuario.proto);
-- Nas linhas 120~155, temos a declaração de alguns repositórios utilizados pelo Spring.
+- Nas linhas 23~47, adicionamos as dependências do Spring;
+- Nas linhas 49~64, adicionamos as dependências relacionadas à segurança do sistema, permitindo que configuremos os serviços gRPC para serem validados de acordo com as roles do usuário logado, que por sua vez são informadas via token JWT;
+- Nas linhas 66~77, temos as dependências utilizadas pelo Maven para gerar as classes do gRPC de acordo com os arquivos .proto; 
+- Nas linhas 79~94, temos as dependências do banco de dados PostgreSQL, commons-lang3 e testes unitários;
+- Nas linhas 97~129, temos as configurações de build, onde informamos ao Maven que queremos buildar todo o sistema, incluindo a geração das classes Java a partir dos arquivos [usuario.proto](./src/main/proto/usuario.proto) e [login.proto](./src/main/proto/login.proto);
+- Nas linhas 131~166, temos a declaração de alguns repositórios utilizados pelo Spring.
 
 ### Banco de dados
 Para conectarmos no banco de dados, adicionamos algumas propriedades no arquivo [application.properties](./resources/application.properties):
@@ -123,27 +125,82 @@ logging.level.org.hibernate.SQL=DEBUG
 logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
 ```
 Essas configurações nos conectam ao banco de dados de nome java_grpc (se não existir ainda, crie), que é onde vamos armazenar os dados de usuários criados via gRPC.
-### Classes para cadastro de usuário
 
-Ao observarmos o pacote [br.senai.sc](./java/br/senai/sc/), vemos alguns diretórios e suas classes:
-- [builder](./java/br/senai/sc/builder/): contém a classe responsável por auxiliar a criação do objeto [Usuario](./java/br/senai/sc/entity/Usuario.java) do banco de dados;
-- [entity](./java/br/senai/sc/entity/): contém a classe que representa o usuário no banco de dados;
-- [grpc](./java/br/senai/sc/grpc/): contém a implementação do serviço de gRPC no sistema;
-- [repository](./java/br/senai/sc/repository/): contém a interface do repositório de banco de dados ([UsuarioRepository](./java/br/senai/sc/repository/UsuarioRepository.java)) de usuário e sua implementação ([UsuarioRepositoryImpl](./java/br/senai/sc/repository/UsuarioRepositoryImpl.java));
-- [service](./java/br/senai/sc/service/): contém a classe de serviço responsável por realizar as regras de negócio do sistema, bem como invocar o repositório de usuário para realizar operações de banco.
+### Classes do projeto
+Ao observarmos o pacote [scheper.mateus](src/main/java/scheper/mateus), vemos alguns diretórios e suas classes:
+- [builder](src/main/java/scheper/mateus/builder): contém a classe responsável por auxiliar a criação do objeto [Usuario](src/main/java/scheper/mateus/entity/Usuario.java) do banco de dados;
+- [config](src/main/java/scheper/mateus/config): contém a classe de configuração do Spring;
+- [dto](src/main/java/scheper/mateus/dto): contém os DTOs que utilizaremos nas requisições REST;
+- [entity](src/main/java/scheper/mateus/entity): contém a classe que representa o usuário no banco de dados, bem como a classe representante das funções (roles) do usuário;
+- [exception](src/main/java/scheper/mateus/exception): contém as classes de exceções e seus tratamentos;
+- [grpc](src/main/java/scheper/mateus/grpc): contém a implementação do serviço de gRPC no sistema;
+- [repository](src/main/java/scheper/mateus/repository): contém a interface do repositório de banco de dados ([UsuarioRepository](src/main/java/scheper/mateus/repository/UsuarioRepository.java)) de usuário e sua implementação ([UsuarioRepositoryImpl](src/main/java/scheper/mateus/repository/UsuarioRepositoryImpl.java)). Também temos o [RoleRepository](src/main/java/scheper/mateus/repository/RoleRepository.java), que apenas extende o JpaRepository;
+- [rest](src/main/java/scheper/mateus/rest): contém o controller [UsuarioController](src/main/java/scheper/mateus/rest/UsuarioController.java), responsável por responder às requisições REST que faremos para simular um cliente gRPC (veremos mais abaixo);
+- [service](src/main/java/scheper/mateus/service): contém a classe de serviço [UsuarioService](src/main/java/scheper/mateus/service/UsuarioService.java) responsável por realizar as regras de negócio do sistema, bem como invocar o repositório de usuário para realizar operações de banco. Também temos a classe [LoginService](src/main/java/scheper/mateus/service/LoginService.java), responsável por gerar o token JWT;
+- [utils](src/main/java/scheper/mateus/utils): contém a classe de utilizade [ConstantUtils](src/main/java/scheper/mateus/utils/ConstantUtils.java), responsável por manter constantes do sistema para serem utilizadas onde precisarmos.
+
 ### Arquivo usuario.proto
-
-Observando o arquivo [usuario.proto](./br/senai/sc/src/main/proto/usuario.proto), observamos:
+Observando o arquivo [usuario.proto](src/main/proto/usuario.proto), vemos:
 - Linha 1: informamos para o Protobuf que estamos utilizando a versão 3. Caso não informado, o padrão é a versão 2;
 - Linha 3: definimos que queremos criar múltiplos arquivos em vez de um só;
-- Linha 4: especificamos que o nome do pacote dentro da pasta onde os arquivos serão gerados se chama "br.senai.sc.grpc";
-- Linha 6: definimos o nome do pacote como "grpc";
-- Linha 8: declaramos um serviço de gRPC chamado UsuarioService, com dois métodos: criarUsuario e listarUsuarios;
-- Linha 9: declaramos o método criarUsuario, informando que esperamos receber uma mensagem do tipo NovoUsuarioRequest e que vamos retornar uma mensagem do tipo NovoUsuarioResponse;
-- Linha 10: declaramos o método listarUsuarios, mas especificando que esperamos receber uma mensagem do tipo Usuario (que vamos utilizar como filtro) e que vamos retornar uma mensagem do tipo ListaUsuarioResponse;
-- Linhas 13~16: aqui especificamos o formato da mensagem NovoUsuarioRequest, dizendo que a mesma terá três campos do tipo string;
-- Linhas 19~21: aqui especificamos o formato da mensagem de retorno após a criação do usuário ser bem sucedida. Poderíamos apenas retornar uma mensagem vazia também;
-- Linhas 23~28: mensagem contendo os campos que serão informados pelo cliente gRPC ao chamar o método listarUsuarios. Cada campo será utilizado para montar o SQL que buscará os usuários no banco de dados;
-- Linhas 30~32: definimos uma mensagem de nome ListaUsuarioResponse, informamos que retornaremos uma lista de usuários (observe a palavra "repeated" informando que um ou mais usuários serão retornados).
-### Geração das classes de gRPC
+- Linha 5: definimos o nome do pacote como "grpc";
+- Linha 7: declaramos um serviço de gRPC chamado UsuarioService, com dois métodos: criarUsuario e listarUsuarios;
+- Linha 8: declaramos o método criarUsuario, informando que esperamos receber uma mensagem do tipo NovoUsuarioRequest e que vamos retornar uma mensagem do tipo NovoUsuarioResponse;
+- Linha 9: declaramos o método listarUsuarios, mas especificando que esperamos receber uma mensagem do tipo FiltroListaUsuarioRequest e que vamos retornar uma mensagem do tipo ListaUsuarioResponse;
+- Linhas 12~18: aqui especificamos o formato da mensagem NovoUsuarioRequest, dizendo que a mesma terá quatro campos do tipo string e um do tipo long (uint64);
+- Linhas 20~22: aqui especificamos o formato da mensagem de retorno após a criação do usuário ser bem sucedida. Poderíamos apenas retornar uma mensagem vazia também;
+- Linhas 24~29: mensagem contendo os campos que serão informados pelo cliente gRPC ao chamar o método listarUsuarios. Cada campo será utilizado para montar o SQL que buscará os usuários no banco de dados;
+- Linhas 31~33: definimos uma mensagem de nome ListaUsuarioResponse e informamos que retornaremos uma lista de usuários (observe a palavra "repeated" informando que um ou mais usuários serão retornados).
 
+### Geração das classes de gRPC
+Para gerar as classes utilizando o Maven, basta rodar o maven compile:
+```bash
+ mvn compile
+ ```
+Após rodar o comando, as classes geradas a partir dos arquivos .proto estarão dentro de [target/generated-sources/protobuf](target/generated-sources/protobuf). 
+
+### Implementando a lógica de negócio nos serviços gRPC
+Dentro de [grpc](src/main/java/scheper/mateus/grpc), temos a classe [UsuarioServiceImpl](src/main/java/scheper/mateus/grpc/UsuarioServiceImpl.java), responsável por responder às requisições gRPC do serviço de usuário. Nela, vemos os seguintes pontos:
+- Linha 16: Anotamos a classe com @GRpcService (sim, com "R" maiúsculo), definindo a classe como um serviço gRPC;
+- Linha 17: na declaração da classe, extendemos a classe _UsuarioServiceGrpc.UsuarioServiceImplBase_ gerada pelo Protobuf através do Maven, definida no arquivo [usuario.proto](src/main/proto/usuario.proto). Ao extender a classe, podemos sobrescrever os métodos _criarUsuario_ e _listarUsuarios_;
+- Linhas 19 e 21: Injetamos o serviço de usuário, que é onde faremos realmente a nossa lógica de negócio (criar e listar usuários);
+- Linhas 26~51: Aqui sobrescrevemos o método _criarUsuario_, sendo:
+  - Linha 27: Anotação @Allow para que a implementação de segurança do sistema permita apenas que usuários logados que possuam a função ADMIN consigam acessar o recurso;
+  - Linha 28: Recebemos por parâmetro os objetos _NovoUsuarioRequest_ e _StreamObserver<NovoUsuarioResponse>_, sendo os dados passados no request pelo usuário e o objeto que utilizaremos para controlar a resposta (sucesso/erro);
+  - Linha 30: Aqui chamamos o serviço _UsuarioService_ passando o request como parâmetro e obtendo o response já populado com os dados do usuário criado;
+  - Linhas 32 e 33: Sendo que já temos o response, inserimos ele no objeto de retorno (linha 32) e completamos a requisição (linha 33), entregando os dados ao usuário;
+  - Linhas 37~45: Caso aconteça alguma exceção, cairemos no catch, permitindo retornar um código de erro para o usuário. Aqui criamos o código de erro INVALID_ARGUMENT (3), detalhamos o erro, adicionamos na resposta (linha 32) e finalmente lançamos a exceção, fazendo com que a resposta para o usuário seja um erro. 
+- Linhas 59~66: Aqui fazemos algo parecido com o método anterior, mas para a listagem de usuários.
+
+### Segurança com JWT
+Nossa aplicação está segurada pela biblioteca [grpc-jwt-spring-boot-starter](https://github.com/majusko/grpc-jwt-spring-boot-starter), responsável por proteger todos os endpoints anotados com @Allow e nos permitir que geremos os tokens JWT através do _JwtService_.
+
+Dentro de [grpc](src/main/java/scheper/mateus/grpc), temos a classe [LoginServiceImpl](src/main/java/scheper/mateus/grpc/LoginServiceImpl.java), responsável por responder às requisições de login. 
+Nela, chamamos o serviço _LoginService_ para criar o token JWT (linha 25), adicionamos o token na resposta da requisição (linha 26), adicionamos a requisição no retorno (linha 27) e finalmente completamos o request (linha 28).
+
+Daqui em diante, o sistema já mantém informações sobre o token recém criado, pois dentro de _LoginService_, mais especificamente na linha 37, o serviço do gRPC _JwtService_ já gerou o token com o código de assinatura especificado no application.properties e 
+adicionou um tempo de expiração (também especificado lá).
+
+A partir do momento em que o usuário obtém o token do corpo da requisição de login, será possível acessar 
+os recursos protegidos passando o mesmo no header Authorization (desde que ele tenha a role necessária, claro).
+
+
+### Criando um cliente para testes
+Como somos ~~preguiçosos~~ espertos, em vez de criarmos uma outra aplicação somente para implementarmos um cliente gRPC,
+vamos utilizar endpoints REST para chamar os endpoints gRPC:
+
+Dentro de [rest](src/main/java/scheper/mateus/rest), temos um controller responsável por atender às requisições REST em [/usuario](http://localhost:8080/usuario.
+Nas requisições, chamamos o endpoint /usuario tanto em GET quanto em POST, podendo também passar parâmetros. 
+Quando um endpoint for chamado, em vez de acessarmos um serviço para cadastrar/listar usuário no banco de dados como normalmente faríamos, vamos na verdade chamar o serviço de login do gRPC para obter um token, inserir o token em uma nova chamada gRPC (_criarUsuario_ ou _listarUsuarios_, dependendo do endpoint REST que for chamado) e aí sim fazer a requisição gRPC que queremos. 
+Dessa forma, é possível ver que conseguimos ter serviços gRPC e REST na mesma aplicação, podendo ou não interligá-los.
+
+Vemos um exemplo:
+- O usuário faz uma requisição REST do tipo POST em /usuario, passando os dados do usuário que será cadastrado;
+- A aplicação recebe os dados e chama o método _usuarioService.criarUsuario(usuarioDTO)_;
+- Dentro do método, um outro método chamado _criarStub_ é invocado, onde:
+    - O canal é criado (linha 65. É onde especificamos o HOST:PORTA que o serviço gRPC está rodando);
+    - O stub (cliente) é criado (linha 66) e vinculado ao canal;
+    - O token é obtido do serviço de login do gRPC e adicionado no stub (cliente).
+- Após a criação do stub (cliente) com o token JWT, um objeto do tipo NovoUsuarioRequest (gerado pelo Protobuf) é criado com os dados enviados via POST (linha 41);
+- O método gRPC é chamado (linha 42), retornando um objeto do tipo NovoUsuarioResponse (gerado pelo Protobuf);
+- O método então retorna o DTO novamente para o usuário observar os dados do usuário recém criado (linha 45).

@@ -5,7 +5,7 @@ import scheper.mateus.entity.Usuario;
 
 public interface UsuarioRepository {
 
-    ListaUsuarioResponse listarUsuarios(grpc.Usuario filtro);
+    ListaUsuarioResponse listarUsuarios(grpc.FiltroListaUsuarioRequest filtro);
 
     void save(Usuario usuario);
 

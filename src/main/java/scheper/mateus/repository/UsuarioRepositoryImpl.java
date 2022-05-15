@@ -1,5 +1,6 @@
 package scheper.mateus.repository;
 
+import grpc.ListaUsuarioResponse;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
@@ -7,9 +8,10 @@ import jakarta.persistence.Query;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Repository;
 import scheper.mateus.entity.Usuario;
-import grpc.ListaUsuarioResponse;
 
 import java.util.List;
+
+import static scheper.mateus.utils.StringUtils.formatarCpf;
 
 @SuppressWarnings("unchecked")
 @Repository
@@ -37,7 +39,7 @@ public class UsuarioRepositoryImpl implements UsuarioRepository {
     }
 
     @Override
-    public ListaUsuarioResponse listarUsuarios(grpc.Usuario filtro) {
+    public ListaUsuarioResponse listarUsuarios(grpc.FiltroListaUsuarioRequest filtro) {
         try {
             String sql = gerarSqlListarUsuarios(filtro);
             Query query = entityManager.createNativeQuery(sql);
@@ -57,10 +59,10 @@ public class UsuarioRepositoryImpl implements UsuarioRepository {
         for (Object[] dadosUsuario : dadosUsuarios) {
             String idUsuario = (String) dadosUsuario[0];
             String nome = (String) dadosUsuario[1];
-            String cpf = (String) dadosUsuario[2];
+            String cpf = formatarCpf((String) dadosUsuario[2]);
             String email = (String) dadosUsuario[3];
 
-            var usuario = grpc.Usuario.newBuilder()
+            var usuario = grpc.FiltroListaUsuarioRequest.newBuilder()
                     .setId(idUsuario)
                     .setNome(nome)
                     .setCpf(cpf)
@@ -71,13 +73,14 @@ public class UsuarioRepositoryImpl implements UsuarioRepository {
         }
     }
 
-    private void popularParametrosListarUsuarios(grpc.Usuario filtro, Query query) {
+    private void popularParametrosListarUsuarios(grpc.FiltroListaUsuarioRequest filtro, Query query) {
         if (!StringUtils.isBlank(filtro.getId())) {
             query.setParameter("idUsuario", filtro.getId());
         }
 
         if (!StringUtils.isBlank(filtro.getNome())) {
-            String nome = filtro.getNome().trim().toLowerCase();
+            String nome = "%" + filtro.getNome().trim().toLowerCase() + "%";
+            nome = nome.toLowerCase();
             query.setParameter("nome", nome);
         }
 
@@ -90,13 +93,13 @@ public class UsuarioRepositoryImpl implements UsuarioRepository {
         }
     }
 
-    private String gerarSqlListarUsuarios(grpc.Usuario filtro) {
+    private String gerarSqlListarUsuarios(grpc.FiltroListaUsuarioRequest filtro) {
         StringBuilder sql = new StringBuilder();
         String andOrWhere = "WHERE ";
         sql.append("SELECT CAST(u.id_usuario AS varchar), u.nome, u.cpf, u.email FROM public.usuario u ");
 
         if (!StringUtils.isBlank(filtro.getId())) {
-            sql.append(andOrWhere).append("TO_CHAR(u.idUsuario) = :idUsuario ");
+            sql.append(andOrWhere).append("CAST(u.id_usuario AS varchar) = :idUsuario ");
             andOrWhere = "AND ";
         }
 

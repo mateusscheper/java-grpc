@@ -1,13 +1,12 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-//option java_package = "scheper.mateus.grpc";
 
 package grpc;
 
 service UsuarioService {
   rpc criarUsuario (NovoUsuarioRequest) returns (NovoUsuarioResponse) {}
-  rpc listarUsuarios (Usuario) returns (ListaUsuarioResponse) {}
+  rpc listarUsuarios (FiltroListaUsuarioRequest) returns (ListaUsuarioResponse) {}
 }
 
 message NovoUsuarioRequest {
@@ -19,10 +18,15 @@ message NovoUsuarioRequest {
 }
 
 message NovoUsuarioResponse {
-  string message = 1;
+  uint64 id = 1;
+  string nome = 2;
+  string cpf = 3;
+  string email = 4;
+  string senha = 5;
+  uint64 idRole = 6;
 }
 
-message Usuario {
+message FiltroListaUsuarioRequest {
   string id = 1;
   string nome = 2;
   string cpf = 3;
@@ -30,5 +34,5 @@ message Usuario {
 }
 
 message ListaUsuarioResponse {
-  repeated Usuario usuarios = 1;
+  repeated FiltroListaUsuarioRequest usuarios = 1;
 }

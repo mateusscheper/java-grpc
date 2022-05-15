@@ -1,5 +1,8 @@
 package scheper.mateus.service;
 
+import grpc.ListaUsuarioResponse;
+import grpc.NovoUsuarioRequest;
+import grpc.NovoUsuarioResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -7,8 +10,6 @@ import scheper.mateus.builder.UsuarioBuilder;
 import scheper.mateus.entity.Role;
 import scheper.mateus.entity.Usuario;
 import scheper.mateus.exception.BusinessException;
-import grpc.ListaUsuarioResponse;
-import grpc.NovoUsuarioRequest;
 import scheper.mateus.repository.RoleRepository;
 import scheper.mateus.repository.UsuarioRepository;
 
@@ -30,13 +31,21 @@ public class UsuarioService {
     }
 
     @Transactional
-    public void criarUsuario(NovoUsuarioRequest novoUsuarioDTO) {
+    public NovoUsuarioResponse criarUsuario(NovoUsuarioRequest novoUsuarioDTO) {
         String senha = passwordEncoder.encode(novoUsuarioDTO.getSenha());
         Usuario usuario = UsuarioBuilder.fromGrpc(novoUsuarioDTO, senha);
         Role role = obterRole(novoUsuarioDTO);
         usuario.getRoles().add(role);
 
         usuarioRepository.save(usuario);
+
+        return NovoUsuarioResponse.newBuilder()
+                .setId(usuario.getIdUsuario())
+                .setNome(usuario.getNome())
+                .setCpf(usuario.getCpf())
+                .setEmail(usuario.getEmail())
+                .setIdRole(usuario.getRoles().get(0).getIdRole())
+                .build();
     }
 
     private Role obterRole(NovoUsuarioRequest novoUsuarioDTO) {
@@ -53,7 +62,7 @@ public class UsuarioService {
         return roleOptional.get();
     }
 
-    public ListaUsuarioResponse listarUsuarios(grpc.Usuario filtro) {
+    public ListaUsuarioResponse listarUsuarios(grpc.FiltroListaUsuarioRequest filtro) {
         return usuarioRepository.listarUsuarios(filtro);
     }
 }
